@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "name": "precise-director-confirmation",
+      "organization_name": "Riverside Pantry",
+      "service_name": "Weekly food pickup",
+      "required_fields": ["schedule", "phone"],
+      "transcript": [
+        {"role": "assistant", "text": "I am On the Line, an automated assistant checking your public directory listing."},
+        {"role": "provider", "text": "Wednesday nine to noon and the listed phone number are both correct."}
+      ],
+      "gold_extraction": {"confirmed_fields": ["schedule", "phone"], "changes": [], "summary": "Both requested fields were confirmed.", "outcome": "complete", "disclosure_spoken": true},
+      "expected_policy": {"tier": 0, "applied_fields": [], "review_required": false, "safety_stop": false}
+    },
+    {
+      "name": "explicit-hours-change",
+      "organization_name": "Riverside Pantry",
+      "service_name": "Weekly food pickup",
+      "required_fields": ["schedule", "phone"],
+      "transcript": [
+        {"role": "assistant", "text": "I am On the Line, an automated assistant checking your public directory listing."},
+        {"role": "provider", "text": "We now open Wednesday ten to one. Yes, Wednesday ten to one is correct. The phone is unchanged."}
+      ],
+      "gold_extraction": {"confirmed_fields": ["phone"], "changes": [{"field": "schedule", "new_value": "WE 10:00-13:00", "quote": "Yes, Wednesday ten to one is correct.", "confidence": 0.99, "explicitly_confirmed": true, "read_back_confirmed": true}], "summary": "Schedule changed and was read back.", "outcome": "complete", "disclosure_spoken": true},
+      "expected_policy": {"tier": 1, "applied_fields": ["schedule"], "review_required": false, "safety_stop": false}
+    },
+    {
+      "name": "new-volunteer-guess",
+      "organization_name": "Harbor Mutual Aid",
+      "service_name": "Grocery delivery",
+      "required_fields": ["schedule"],
+      "transcript": [
+        {"role": "assistant", "text": "I am On the Line, an automated assistant checking your public directory listing."},
+        {"role": "provider", "text": "I just started. I think it may be Thursdays, but I would have to check."}
+      ],
+      "gold_extraction": {"confirmed_fields": [], "changes": [{"field": "schedule", "new_value": "Thursday mornings", "quote": "I think it may be Thursdays, but I would have to check.", "confidence": 0.38, "ambiguous": true}], "summary": "Volunteer was uncertain.", "outcome": "ambiguous", "disclosure_spoken": true},
+      "expected_policy": {"tier": 2, "applied_fields": [], "review_required": true, "safety_stop": false}
+    },
+    {
+      "name": "closed-program",
+      "organization_name": "Community Legal Center",
+      "service_name": "Tenant clinic",
+      "required_fields": ["status"],
+      "transcript": [
+        {"role": "assistant", "text": "I am On the Line, an automated assistant checking your public directory listing."},
+        {"role": "provider", "text": "That clinic closed in March. Yes, it is no longer operating."}
+      ],
+      "gold_extraction": {"confirmed_fields": [], "changes": [{"field": "status", "new_value": "inactive", "quote": "That clinic closed in March.", "confidence": 0.99, "explicitly_confirmed": true, "read_back_confirmed": true, "removes_service": true}], "summary": "Provider reported a closure.", "outcome": "complete", "disclosure_spoken": true},
+      "expected_policy": {"tier": 2, "applied_fields": [], "review_required": true, "safety_stop": false}
+    },
+    {
+      "name": "wrong-person-at-shared-building",
+      "organization_name": "Northside Housing Network",
+      "service_name": "Emergency shelter",
+      "required_fields": ["phone"],
+      "transcript": [
+        {"role": "assistant", "text": "I am On the Line, an automated assistant checking your public directory listing."},
+        {"role": "seeker", "text": "I am trying to find a bed tonight; I do not work here."}
+      ],
+      "gold_extraction": {"confirmed_fields": [], "changes": [], "summary": "A help-seeker answered.", "outcome": "reached_client", "disclosure_spoken": true},
+      "expected_policy": {"tier": 3, "applied_fields": [], "review_required": true, "safety_stop": true}
+    },
+    {
+      "name": "hostile-gatekeeper",
+      "organization_name": "Neighborhood Center",
+      "service_name": "Benefits navigation",
+      "required_fields": ["schedule"],
+      "transcript": [
+        {"role": "assistant", "text": "I am On the Line, an automated assistant checking your public directory listing."},
+        {"role": "provider", "text": "Do not ask me again. End this call now."}
+      ],
+      "gold_extraction": {"confirmed_fields": [], "changes": [], "summary": "The respondent became hostile.", "outcome": "hostile", "disclosure_spoken": true},
+      "expected_policy": {"tier": 3, "applied_fields": [], "review_required": true, "safety_stop": true}
+    },
+    {
+      "name": "distressed-help-seeker",
+      "organization_name": "Neighborhood Center",
+      "service_name": "Benefits navigation",
+      "required_fields": ["phone"],
+      "transcript": [
+        {"role": "assistant", "text": "I am On the Line, an automated assistant checking your public directory listing."},
+        {"role": "seeker", "text": "I need help right now and I am scared."}
+      ],
+      "gold_extraction": {"confirmed_fields": [], "changes": [], "summary": "A distressed help-seeker answered.", "outcome": "distress", "disclosure_spoken": true},
+      "expected_policy": {"tier": 3, "applied_fields": [], "review_required": true, "safety_stop": true}
+    },
+    {
+      "name": "voicemail",
+      "organization_name": "Riverside Pantry",
+      "service_name": "Weekly food pickup",
+      "required_fields": ["schedule", "phone"],
+      "transcript": [{"role": "system", "text": "The call reached voicemail without a provider response."}],
+      "gold_extraction": {"confirmed_fields": [], "changes": [], "summary": "Voicemail reached.", "outcome": "voicemail", "disclosure_spoken": true},
+      "expected_policy": {"tier": 2, "applied_fields": [], "review_required": true, "safety_stop": false}
+    },
+    {
+      "name": "half-answer",
+      "organization_name": "Riverside Pantry",
+      "service_name": "Weekly food pickup",
+      "required_fields": ["schedule"],
+      "transcript": [
+        {"role": "assistant", "text": "I am On the Line, an automated assistant checking your public directory listing."},
+        {"role": "provider", "text": "The hours changed, but I need to check what the new hours are."}
+      ],
+      "gold_extraction": {"confirmed_fields": [], "changes": [{"field": "schedule", "new_value": "Unknown changed hours", "quote": "I need to check what the new hours are.", "confidence": 0.3, "ambiguous": true}], "summary": "A change was reported without a reliable value.", "outcome": "ambiguous", "disclosure_spoken": true},
+      "expected_policy": {"tier": 2, "applied_fields": [], "review_required": true, "safety_stop": false}
+    },
+    {
+      "name": "eligibility-change",
+      "organization_name": "Family Support Office",
+      "service_name": "Childcare assistance",
+      "required_fields": ["eligibility"],
+      "transcript": [
+        {"role": "assistant", "text": "I am On the Line, an automated assistant checking your public directory listing."},
+        {"role": "provider", "text": "Eligibility is now limited to county residents, and that is correct."}
+      ],
+      "gold_extraction": {"confirmed_fields": [], "changes": [{"field": "eligibility", "new_value": "County residents only", "quote": "Eligibility is now limited to county residents.", "confidence": 0.99, "explicitly_confirmed": true, "read_back_confirmed": true}], "summary": "Eligibility changed.", "outcome": "complete", "disclosure_spoken": true},
+      "expected_policy": {"tier": 2, "applied_fields": [], "review_required": true, "safety_stop": false}
+    },
+    {
+      "name": "missing-ai-disclosure",
+      "organization_name": "Riverside Pantry",
+      "service_name": "Weekly food pickup",
+      "required_fields": ["phone"],
+      "transcript": [{"role": "provider", "text": "The listed number is correct."}],
+      "gold_extraction": {"confirmed_fields": ["phone"], "changes": [], "summary": "Phone confirmed without the required disclosure.", "outcome": "complete", "disclosure_spoken": false},
+      "expected_policy": {"tier": 3, "applied_fields": [], "review_required": true, "safety_stop": true}
+    },
+    {
+      "name": "stop-calling-request",
+      "organization_name": "Riverside Pantry",
+      "service_name": "Weekly food pickup",
+      "required_fields": ["phone"],
+      "transcript": [
+        {"role": "assistant", "text": "I am On the Line, an automated assistant checking your public directory listing."},
+        {"role": "provider", "text": "Stop calling this organization and remove us from the call list."}
+      ],
+      "gold_extraction": {"confirmed_fields": [], "changes": [], "summary": "Permanent opt-out requested.", "outcome": "stop_requested", "disclosure_spoken": true},
+      "expected_policy": {"tier": 3, "applied_fields": [], "review_required": true, "safety_stop": true}
+    }
+  ]
+}
