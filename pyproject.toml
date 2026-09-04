@@ -1,0 +1,59 @@
+[project]
+name = "on-the-line"
+version = "1.0.0"
+description = "A self-healing community resource directory with human judgment at the boundary."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = [
+    "strands-agents>=1.51,<2",
+    "strands-agents-tools>=0.8,<1",
+    "aws-sdk-bedrock-runtime>=0.8,<1",  # Nova Sonic bidirectional model
+    "awscrt>=0.32,<1",  # transport smithy-http uses for the Sonic bidirectional stream
+    "boto3>=1.43,<2",
+    "httpx>=0.28,<1",
+    "numpy>=2.3,<3",
+    "pydantic-settings>=2.10,<3",
+    "starlette>=1,<2",
+    "uvicorn[standard]>=0.35,<1",
+]
+
+[project.scripts]
+ontheline = "ontheline.cli:main"
+
+[project.optional-dependencies]
+# Local microphone/speaker spike only. The telephony bridge does not need pyaudio.
+mic = ["pyaudio"]
+eval = ["strands-agents-evals"]
+dev = ["pytest", "pytest-asyncio", "ruff", "httpx2>=2.10,<3"]
+demo = ["playwright", "edge-tts"]  # UI smoke tour and demo-video pipeline
+security = ["pip-audit==2.10.1"]
+
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ontheline = ["web/*.html", "web/*.css", "web/*.js", "web/*.svg", "web/call/*.mp3", "web/call/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+asyncio_mode = "auto"
+addopts = "-p no:cacheprovider"
+filterwarnings = [
+    "ignore::DeprecationWarning:audioop",
+    "ignore:BedrockRuntimeClient is deprecated:DeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]  # Long SQL, CSP, and prompts are clearer unwrapped.
