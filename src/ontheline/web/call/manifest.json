@@ -1,0 +1,162 @@
+{
+  "hours_changed": [
+    {
+      "role": "assistant",
+      "text": "Hello, this is On the Line. I am an automated assistant calling for the community resource directory. Is now a good time to check what you publish for the weekly grocery pickup?",
+      "file": "hours_changed-0.mp3",
+      "seconds": 9.744
+    },
+    {
+      "role": "provider",
+      "text": "Sure, go ahead.",
+      "file": "hours_changed-1.mp3",
+      "seconds": 1.512
+    },
+    {
+      "role": "assistant",
+      "text": "Thank you. We list it as Wednesdays, nine to twelve, on the number ending one one zero one. Is that still right?",
+      "file": "hours_changed-2.mp3",
+      "seconds": 7.416
+    },
+    {
+      "role": "provider",
+      "text": "The phone number is right. The hours moved though. They changed to ten to one.",
+      "file": "hours_changed-3.mp3",
+      "seconds": 5.232
+    },
+    {
+      "role": "assistant",
+      "text": "Let me read that back. Wednesdays, ten in the morning to one in the afternoon. Have I got that right?",
+      "file": "hours_changed-4.mp3",
+      "seconds": 6.144
+    },
+    {
+      "role": "provider",
+      "text": "Yes, ten to one on Wednesdays is correct.",
+      "file": "hours_changed-5.mp3",
+      "seconds": 3.432
+    },
+    {
+      "role": "assistant",
+      "text": "Thank you, I have noted it. Have a good afternoon.",
+      "file": "hours_changed-6.mp3",
+      "seconds": 3.216
+    }
+  ],
+  "confirmed": [
+    {
+      "role": "assistant",
+      "text": "Hello, this is On the Line, an automated assistant calling on behalf of the community resource directory. I am checking the details you publish for the weekly grocery pickup.",
+      "file": "confirmed-0.mp3",
+      "seconds": 10.032
+    },
+    {
+      "role": "provider",
+      "text": "Go ahead.",
+      "file": "confirmed-1.mp3",
+      "seconds": 1.08
+    },
+    {
+      "role": "assistant",
+      "text": "We list the pickup as Wednesdays, nine to twelve, on five five five, zero one zero, one one zero one. Is any of that out of date?",
+      "file": "confirmed-2.mp3",
+      "seconds": 7.512
+    },
+    {
+      "role": "provider",
+      "text": "No, that is correct. The Wednesday hours and that phone number are unchanged.",
+      "file": "confirmed-3.mp3",
+      "seconds": 5.112
+    },
+    {
+      "role": "assistant",
+      "text": "Thank you, I will note that nothing has changed.",
+      "file": "confirmed-4.mp3",
+      "seconds": 2.592
+    }
+  ],
+  "program_closed": [
+    {
+      "role": "assistant",
+      "text": "Hello, this is On the Line, an automated assistant calling on behalf of the community resource directory. I am checking the details you publish for the weekly grocery pickup.",
+      "file": "program_closed-0.mp3",
+      "seconds": 10.032
+    },
+    {
+      "role": "provider",
+      "text": "Oh. That program closed at the end of July.",
+      "file": "program_closed-1.mp3",
+      "seconds": 3.36
+    },
+    {
+      "role": "assistant",
+      "text": "I understand, thank you for telling me. To confirm, the weekly grocery pickup is no longer running.",
+      "file": "program_closed-2.mp3",
+      "seconds": 6.144
+    },
+    {
+      "role": "provider",
+      "text": "That is right, it ended in July.",
+      "file": "program_closed-3.mp3",
+      "seconds": 2.4
+    },
+    {
+      "role": "assistant",
+      "text": "Thank you. I will not change the listing myself. Someone on the directory team will review this before anything is removed.",
+      "file": "program_closed-4.mp3",
+      "seconds": 7.296
+    }
+  ],
+  "uncertain_volunteer": [
+    {
+      "role": "assistant",
+      "text": "Hello, this is On the Line, an automated assistant calling on behalf of the community resource directory. I am checking the details you publish for the weekly grocery pickup.",
+      "file": "uncertain_volunteer-0.mp3",
+      "seconds": 10.032
+    },
+    {
+      "role": "provider",
+      "text": "I am just a volunteer, but I can try.",
+      "file": "uncertain_volunteer-1.mp3",
+      "seconds": 2.904
+    },
+    {
+      "role": "assistant",
+      "text": "Thank you. We list the pickup as Wednesdays. Is that still the day?",
+      "file": "uncertain_volunteer-2.mp3",
+      "seconds": 4.584
+    },
+    {
+      "role": "provider",
+      "text": "I think it might be Thursday now, but I would have to check.",
+      "file": "uncertain_volunteer-3.mp3",
+      "seconds": 3.576
+    },
+    {
+      "role": "assistant",
+      "text": "That is completely fine. I will not record anything uncertain, and I will leave it for someone to confirm. Thank you for your time.",
+      "file": "uncertain_volunteer-4.mp3",
+      "seconds": 8.064
+    }
+  ],
+  "stop_calling": [
+    {
+      "role": "assistant",
+      "text": "Hello, this is On the Line, an automated assistant calling on behalf of the community resource directory. I am checking the details you publish for the weekly grocery pickup.",
+      "file": "stop_calling-0.mp3",
+      "seconds": 10.032
+    },
+    {
+      "role": "provider",
+      "text": "Please stop calling and take us off your list.",
+      "file": "stop_calling-1.mp3",
+      "seconds": 2.832
+    },
+    {
+      "role": "assistant",
+      "text": "Understood. I am ending the call now and this number will not be called again.",
+      "file": "stop_calling-2.mp3",
+      "seconds": 4.632
+    }
+  ]
+}
