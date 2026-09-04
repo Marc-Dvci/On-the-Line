@@ -9,6 +9,24 @@ reports a closed door, that report becomes the next call in the same database tr
 
 Built for the AWS *Agents for Humans* hackathon, Good Neighbor track.
 
+## Try it
+
+**<https://54-84-108-211.sslip.io>**
+
+The public side needs no account: <https://54-84-108-211.sslip.io/help> is the search a person
+looking for help would use. Sign in to the curator console with `judge` / `ontheline-demo-2026`.
+
+- `/help` — search, take a referral, and report a closed door. Watch that report reach the top of
+  the call queue.
+- Overview — press **Call the provider** on the first queued service and listen to the call. Turn
+  the sound on.
+- Decisions — the closure the agent refused to publish, with the evidence diff and the quote.
+- Activity — the append-only chain, which the database will not let anyone edit or delete.
+- Add `?demo=1` to any page for a narrated walkthrough that drives the real console. Escape stops it
+  and hands the product back.
+
+The directory is a clearly labelled demonstration dataset and restores itself every six hours.
+
 ## The problem, in one trip
 
 Two buses. Two children. A pantry that closed in July and a directory that still says Wednesdays,
