@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="On the Line phones the food banks, clinics and shelters in a community directory, confirms what is still true, and asks a person only when the answer needs judgment.">
+  <title>On the Line — help that was confirmed open</title>
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+  <div id="toast-region" class="toast-region" aria-live="polite"></div>
+
+  <main id="login-view" class="login-shell">
+    <section class="login-story" aria-labelledby="brand-title">
+      <a class="wordmark wordmark-light" href="/" aria-label="On the Line home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M8 12h8"/><circle cx="4.6" cy="12" r="3.2" fill="currentColor" stroke="none"/><circle cx="19.4" cy="12" r="3.2" fill="currentColor" stroke="none"/></svg></span> On the Line</a>
+      <div>
+        <p class="eyebrow light">A directory that phones ahead</p>
+        <h1 id="brand-title">When a meal is on the line, someone should be on the line.</h1>
+        <p>Two buses, two children, and a pantry that closed in July. On the Line calls the provider before that trip happens, publishes only what they said out loud, and brings the hard answers to a person.</p>
+      </div>
+      <div class="trust-note"><span class="pulse-dot"></span> Every published fact traces to a quote, a call and a consent</div>
+    </section>
+    <section class="login-panel" aria-labelledby="sign-in-title">
+      <form id="login-form" class="login-form">
+        <p class="eyebrow">Curator console</p>
+        <h2 id="sign-in-title">Welcome back</h2>
+        <p class="muted">Sign in to see the calls that are yours to make.</p>
+        <label>Username<input name="username" autocomplete="username" required></label>
+        <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+        <p id="login-error" class="form-error" role="alert"></p>
+        <button class="button primary wide" type="submit">Open the console <span>→</span></button>
+        <a class="public-help-link" href="/help">Looking for help right now? Search what is confirmed open →</a>
+      </form>
+    </section>
+  </main>
+
+  <div id="app-view" class="app-shell" hidden>
+    <aside class="sidebar">
+      <a class="wordmark" href="#dashboard"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M8 12h8"/><circle cx="4.6" cy="12" r="3.2" fill="currentColor" stroke="none"/><circle cx="19.4" cy="12" r="3.2" fill="currentColor" stroke="none"/></svg></span> On the Line</a>
+      <nav aria-label="Primary navigation">
+        <button class="nav-item active" data-view="dashboard"><span>⌂</span> Overview</button>
+        <button class="nav-item" data-view="decisions"><span>◇</span> Decisions <b id="decision-badge" class="badge" hidden>0</b></button>
+        <button class="nav-item" data-view="directory"><span>▤</span> Directory</button>
+        <button class="nav-item" data-view="intake"><span>↗</span> Find help</button>
+        <button class="nav-item" data-view="activity"><span>≋</span> Activity</button>
+      </nav>
+      <div class="sidebar-foot">
+        <div class="agent-state"><span class="pulse-dot"></span><div><strong>Agent online</strong><small id="agent-mode">demo mode</small></div></div>
+        <button id="logout-button" class="nav-item"><span>↪</span> Sign out</button>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <button id="menu-button" class="icon-button menu-button" aria-label="Open menu">☰</button>
+        <div><p id="page-kicker" class="eyebrow">Today</p><h1 id="page-title">Overview</h1></div>
+        <div class="topbar-actions"><span id="audit-health" class="health-pill">● Evidence chain intact</span><div id="user-avatar" class="avatar">DC</div></div>
+      </header>
+      <section id="content" class="content" aria-live="polite"></section>
+    </main>
+  </div>
+
+  <dialog id="demo-dialog" class="dialog">
+    <form method="dialog" class="dialog-card">
+      <div class="dialog-head"><div><p class="eyebrow">Verification call</p><h2>Call the provider</h2></div><button class="icon-button" value="cancel" aria-label="Close">&times;</button></div>
+      <div id="call-setup">
+        <p class="muted">The call runs on the pilot line. The extractor, the tier policy, the write path and the audit trail are the production ones.</p>
+        <label>How the call goes
+          <select id="scenario-select">
+            <option value="hours_changed">The hours have moved</option>
+            <option value="confirmed">Everything is still correct</option>
+            <option value="program_closed">The program has closed</option>
+            <option value="uncertain_volunteer">A volunteer is not sure</option>
+            <option value="stop_calling">The organization opts out</option>
+          </select>
+        </label>
+        <div class="policy-preview"><span>Policy</span><strong id="scenario-policy">Tier 1 &middot; safe field update</strong></div>
+      </div>
+      <div id="call-stage" class="call-stage" hidden>
+        <div class="call-bar">
+          <span class="call-dot"></span>
+          <div><strong id="call-who">Riverside Community Pantry</strong><small id="call-status">Connecting</small></div>
+          <span id="call-clock" class="call-clock">0:00</span>
+        </div>
+        <div id="call-transcript" class="call-transcript" aria-live="polite"></div>
+        <div id="call-verdict" class="call-verdict" hidden></div>
+      </div>
+      <div class="dialog-actions"><button class="button secondary" value="cancel">Cancel</button><button id="run-demo-button" class="button primary" value="default" type="button">Place the call &rarr;</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="form-dialog" class="dialog">
+    <form id="form-dialog-form" class="dialog-card">
+      <div class="dialog-head">
+        <div><p id="form-dialog-kicker" class="eyebrow">Curator action</p><h2 id="form-dialog-title">Confirm action</h2></div>
+        <button id="form-dialog-close" class="icon-button" type="button" aria-label="Close">×</button>
+      </div>
+      <p id="form-dialog-copy" class="muted"></p>
+      <div id="form-dialog-fields"></div>
+      <p id="form-dialog-error" class="form-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button id="form-dialog-cancel" class="button secondary" type="button">Cancel</button>
+        <button id="form-dialog-submit" class="button primary" type="submit">Continue</button>
+      </div>
+    </form>
+  </dialog>
+
+  <input id="hsds-import-file" type="file" accept="application/json,.json" hidden>
+
+  <script src="/assets/app.js" defer></script>
+  <script src="/assets/demo.js" defer></script>
+</body>
+</html>

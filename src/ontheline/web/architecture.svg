@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 690" role="img" aria-labelledby="title desc">
+  <title id="title">On the Line system architecture</title>
+  <desc id="desc">Provider verification and seeker intake feed a Strands extraction graph, deterministic tier policy, curator decisions, HSDS store, and audit chain.</desc>
+  <style>
+    .bg{fill:#f5f2e9}.box{fill:#fffefa;stroke:#cfd5cc;stroke-width:2}.agent{fill:#e2efe5;stroke:#174f3d;stroke-width:2}.human{fill:#fff0df;stroke:#e56f4b;stroke-width:2}.store{fill:#174f3d;stroke:#174f3d;stroke-width:2}.title{font:700 22px system-ui,sans-serif;fill:#17241f}.body{font:15px system-ui,sans-serif;fill:#53615b}.light{fill:#fffefa}.label{font:700 13px system-ui,sans-serif;letter-spacing:1.5px;fill:#e56f4b}.arrow{stroke:#6c7a73;stroke-width:2.5;fill:none;marker-end:url(#tip)}
+    @media(prefers-color-scheme:dark){.bg{fill:#17241f}.box{fill:#24332d;stroke:#5e7168}.agent{fill:#234b3d;stroke:#79b99c}.human{fill:#513b2f;stroke:#ef8d6c}.title{fill:#f8f5eb}.body{fill:#bdc9c3}.store{fill:#0d3327;stroke:#79b99c}.arrow{stroke:#a8b8b0}}
+  </style>
+  <defs><marker id="tip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="#6c7a73"/></marker></defs>
+  <rect class="bg" width="1200" height="690" rx="24"/>
+  <text x="60" y="65" class="label">TWO LOOPS · ONE SOURCE OF TRUTH</text>
+  <text x="60" y="102" class="title" style="font-size:32px">On the Line architecture</text>
+
+  <rect x="60" y="155" width="245" height="120" rx="16" class="box"/>
+  <text x="85" y="192" class="title">Provider channel</text><text x="85" y="222" class="body">Twilio + Nova Sonic</text><text x="85" y="247" class="body">or consented text sandbox</text>
+  <rect x="60" y="430" width="245" height="120" rx="16" class="box"/>
+  <text x="85" y="467" class="title">Help-seeker intake</text><text x="85" y="497" class="body">Fresh referral search</text><text x="85" y="522" class="body">+ field failure report</text>
+
+  <rect x="385" y="155" width="275" height="120" rx="16" class="agent"/>
+  <text x="410" y="192" class="title">AgentCore · Strands Graph</text><text x="410" y="222" class="body">Safety reader → GoalLoop</text><text x="410" y="247" class="body">structured HSDS extractor</text>
+  <rect x="385" y="320" width="275" height="120" rx="16" class="agent"/>
+  <text x="410" y="357" class="title">Deterministic policy</text><text x="410" y="387" class="body">Tier 0/1 apply · Tier 2/3</text><text x="410" y="412" class="body">stop for human judgment</text>
+  <rect x="385" y="485" width="275" height="120" rx="16" class="box"/>
+  <text x="410" y="522" class="title">Priority scheduler</text><text x="410" y="552" class="body">Staleness · traffic · failure</text><text x="410" y="577" class="body">volatility · contact penalty</text>
+
+  <rect x="750" y="155" width="390" height="120" rx="16" class="human"/>
+  <text x="780" y="192" class="title">Curator console</text><text x="780" y="222" class="body">Decision inbox · evidence diff</text><text x="780" y="247" class="body">Approve · reject · edit</text>
+  <rect x="750" y="335" width="390" height="150" rx="16" class="store"/>
+  <text x="780" y="375" class="title light">HSDS 3.2 directory</text><text x="780" y="408" class="body light">Organizations · services · locations</text><text x="780" y="435" class="body light">phones · schedules · assurance dates</text><text x="780" y="462" class="body light">+ append-only hash-chained evidence</text>
+
+  <path d="M305 215H385" class="arrow"/><path d="M522 275V320" class="arrow"/><path d="M660 380H750" class="arrow"/><path d="M945 275V335" class="arrow"/><path d="M750 410H690V545H660" class="arrow"/><path d="M385 545H305V490" class="arrow"/><path d="M305 490H350V380H385" class="arrow"/>
+  <text x="674" y="365" class="label">TIER 2/3</text><text x="675" y="530" class="label">FRESH DATA</text><text x="76" y="596" class="label">FAILURE CLOSES LOOP B INTO LOOP A</text>
+</svg>
