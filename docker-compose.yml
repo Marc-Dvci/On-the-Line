@@ -1,0 +1,17 @@
+services:
+  ontheline:
+    build: .
+    ports:
+      - "8000:8080"
+    environment:
+      OTL_DATABASE_PATH: /app/data/ontheline.db
+      OTL_ALLOWED_HOSTS: localhost,127.0.0.1
+      OTL_SECRET_KEY: development-only-change-me
+      OTL_CURATOR_PASSWORD: ontheline-demo-2026
+      OTL_BOOTSTRAP_SAMPLE_DATA: "true"
+    volumes:
+      - ontheline-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  ontheline-data:

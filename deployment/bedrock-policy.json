@@ -1,0 +1,31 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadExtractionInferenceProfile",
+      "Effect": "Allow",
+      "Action": "bedrock:GetInferenceProfile",
+      "Resource": "*"
+    },
+    {
+      "Sid": "InvokeOnTheLineNovaModels",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:InvokeModelWithBidirectionalStream"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:*::foundation-model/amazon.nova-2-lite-v1:0",
+        "arn:aws:bedrock:*::foundation-model/amazon.nova-2-sonic-v1:0",
+        "arn:aws:bedrock:*:*:inference-profile/us.amazon.nova-2-lite-v1:0"
+      ]
+    },
+    {
+      "Sid": "InvokeOnTheLineAgentCoreRuntime",
+      "Effect": "Allow",
+      "Action": "bedrock-agentcore:InvokeAgentRuntime",
+      "Resource": "arn:aws:bedrock-agentcore:*:*:runtime/*"
+    }
+  ]
+}

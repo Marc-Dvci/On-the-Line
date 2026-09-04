@@ -1,0 +1,30 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InvokeAmazonModels",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:GetInferenceProfile"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:*::foundation-model/amazon.nova-2-lite-v1:0",
+        "arn:aws:bedrock:*:*:inference-profile/us.amazon.nova-2-lite-v1:0"
+      ]
+    },
+    {
+      "Sid": "RuntimeTelemetry",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "xray:PutTraceSegments",
+        "xray:PutTelemetryRecords",
+        "cloudwatch:PutMetricData"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

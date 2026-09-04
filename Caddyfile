@@ -1,0 +1,4 @@
+{$OTL_DOMAIN} {
+    encode zstd gzip
+    reverse_proxy ontheline:8080
+}

@@ -1,0 +1,32 @@
+FROM python:3.12-slim AS builder
+
+ENV PIP_NO_CACHE_DIR=1
+WORKDIR /build
+COPY requirements.lock ./
+RUN python -m pip install setuptools==80.9.0 \
+    && python -m pip install --require-hashes -r requirements.lock
+COPY pyproject.toml README.md LICENSE ./
+COPY src ./src
+RUN python -m pip wheel --no-deps --no-build-isolation . --wheel-dir /wheels
+
+FROM python:3.12-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 \
+    OTL_ENVIRONMENT=agentcore OTL_AGENT_MODE=bedrock \
+    OTL_AGENT_SESSION_PATH=/app/data/strands-sessions
+WORKDIR /app
+
+RUN addgroup --system ontheline && adduser --system --ingroup ontheline --home /app ontheline
+COPY requirements.lock ./
+COPY --from=builder /wheels /wheels
+RUN python -m pip install --require-hashes -r requirements.lock \
+    && python -m pip install --no-deps /wheels/on_the_line-1.0.0-py3-none-any.whl \
+    && rm -rf /wheels requirements.lock
+
+RUN mkdir -p /app/data && chown -R ontheline:ontheline /app
+USER ontheline
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/ping', timeout=2)"
+
+CMD ["uvicorn", "ontheline.agentcore:app", "--host", "0.0.0.0", "--port", "8080"]

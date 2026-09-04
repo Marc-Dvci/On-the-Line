@@ -1,0 +1,32 @@
+services:
+  ontheline:
+    build: .
+    env_file:
+      - ${OTL_ENV_FILE:-.env.production}
+    expose:
+      - "8080"
+    volumes:
+      - ontheline-data:/app/data
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2.11.4-alpine
+    env_file:
+      - ${OTL_ENV_FILE:-.env.production}
+    depends_on:
+      ontheline:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: unless-stopped
+
+volumes:
+  ontheline-data:
+  caddy-data:
+  caddy-config:
