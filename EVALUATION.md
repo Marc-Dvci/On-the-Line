@@ -90,7 +90,7 @@ Recorded release verification on 2026-08-12:
 
 | Gate | Result |
 |---|---:|
-| Pytest | 107 passed |
+| Pytest | 124 passed |
 | Ruff | All checks passed |
 | Python bytecode compilation | Passed |
 | Browser JavaScript syntax | Passed |
