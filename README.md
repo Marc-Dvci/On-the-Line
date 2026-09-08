@@ -137,10 +137,25 @@ writes `src/ontheline/web/call/` plus a manifest carrying each clip's measured d
 reveals each transcript line exactly when it is spoken, so the words on screen and the words in the
 audio cannot drift.
 
-The call is not a script the model is asked to agree with. It is the input: the safety reader and the
-extractor see the transcript, and the policy in `ontheline.policy` decides what may be written. A
-readback that is missing, hedged, or contradicted lands in the decision inbox rather than the
+The call is not a script the model is asked to agree with. It is the input: the safety reader and
+the extractor see the transcript, and the policy in `ontheline.policy` decides what may be written.
+A readback that is missing, hedged, or contradicted lands in the decision inbox rather than the
 directory.
+
+That holds for a live provider call too, and it takes two things rather than one. The voice agent
+records what it heard through its tools, including whether the provider confirmed a readback, and
+the tier policy treats that flag as evidence. It is produced by the model that ran the
+conversation, so it is checked before policy sees it: `ontheline.readback` looks in the transcript
+for the exchange the flag claims happened, which is the provider raising the value, the assistant
+reading the whole of it back, and the provider agreeing, in that order. No model is involved, so
+the check runs on every call in every mode. Where a model path is configured, the finished
+transcript is then read by the extraction graph as well, and the two readings have to agree on a
+field and its value before it publishes. A disagreement goes to a curator with the reason recorded
+on the run.
+
+One consequence is worth stating plainly rather than hiding: the stored transcript redacts phone
+numbers, so a phone readback cannot be corroborated from the record, and a phone change heard on a
+live call always goes to a person.
 
 ```powershell
 python tools/build_call_audio.py    # regenerate the audio after editing a call

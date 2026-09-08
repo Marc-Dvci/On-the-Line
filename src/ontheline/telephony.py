@@ -21,11 +21,13 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 from ontheline.audio.telephony_io import TelephonyAudioInput, TelephonyAudioOutput
 from ontheline.config import Settings
 from ontheline.database import Store
-from ontheline.domain import ExtractionResult, ProposedFieldChange
-from ontheline.policy import classify_extraction
+from ontheline.domain import ExtractionResult, ProposedFieldChange, TranscriptTurn
+from ontheline.policy import SAFETY_OUTCOMES, classify_extraction
 from ontheline.privacy import redact_pii
+from ontheline.readback import corroborate, quote_supported
 from ontheline.spike.call_agent import CallRecord, build_agent
 from ontheline.spike.intake_agent import IntakeRecord, build_intake_agent
+from ontheline.workflow import extract_from_transcript
 
 MAX_MEDIA_MESSAGE_BYTES = 64_000
 START_TIMEOUT_SECONDS = 20
@@ -120,38 +122,210 @@ async def place_outbound_call(settings: Settings, store: Store, task_id: str) ->
     return {"call_id": call_id, "task_id": task_id, "status": "dialing", "provider_sid": external_sid}
 
 
+SUPPORTED_OUTCOMES = {
+    "complete", "voicemail", "no_answer", "wrong_number", "stop_requested",
+    "reached_client", "distress", "hostile", "ambiguous",
+}
+
+CLOSURE_WORDS = ("closed", "ended", "stopped", "inactive", "suspended")
+
+
+def _summarise(outcome: str, notes: list[str]) -> str:
+    summary = f"Live provider call ended with {outcome}."
+    for note in notes:
+        if len(summary) + len(note) + 1 > 990:
+            break
+        summary = f"{summary} {note}"
+    return summary
+
+
 def call_record_to_extraction(record: CallRecord) -> ExtractionResult:
-    changes = []
+    """Turn one call's in-memory record into the schema the tier policy consumes.
+
+    The voice agent writes this record through its tools, and one of the things
+    it writes is `read_back_confirmed`: its own account of whether the provider
+    confirmed a readback. The tier policy treats that as evidence, and publishes
+    a low-judgment change without a curator when it is true. So a wrong tool call
+    used to be enough to publish, because the model was the only witness to its
+    own conversation.
+
+    Every such claim is checked here against the recorded transcript before
+    policy sees it. `read_back_confirmed` survives only if the transcript shows
+    the provider raising the value, the assistant reading the whole of it back,
+    and the provider agreeing. `explicitly_confirmed` survives only if the quote
+    the agent attributed to the provider resembles something the provider is
+    recorded as saying. What the model can still do is send a curator something
+    to look at. What it can no longer do is publish.
+    """
+    changes: list[ProposedFieldChange] = []
+    notes: list[str] = []
     field_aliases = {"eligibility_description": "eligibility"}
     for item in record.proposed_changes:
         field = field_aliases.get(item["field"], item["field"])
-        lowered = str(item["new_value"]).lower()
-        removes = field == "status" and any(
-            word in lowered for word in ("closed", "ended", "stopped", "inactive", "suspended")
-        )
+        new_value = str(item["new_value"])
+        claimed = bool(item.get("read_back_confirmed"))
+        evidence = corroborate(record.transcript, field, new_value)
+        quoted = quote_supported(record.transcript, str(item.get("quote", "")))
+        confirmed = claimed and evidence.corroborated
+        if claimed and not evidence.corroborated:
+            notes.append(
+                f"{field}: the call agent reported a confirmed readback that the transcript does "
+                f"not show, so it is going to a person ({evidence.reason})."
+            )
+        elif confirmed:
+            notes.append(f"{field}: readback corroborated in the transcript.")
+        else:
+            notes.append(f"{field}: no readback was claimed, so it is going to a person.")
+        removes = field == "status" and any(word in new_value.lower() for word in CLOSURE_WORDS)
         changes.append(ProposedFieldChange(
             field=field,
             new_value=item["new_value"],
             quote=item["quote"],
-            confidence=0.99 if item.get("read_back_confirmed") else 0.75,
-            explicitly_confirmed=True,
-            read_back_confirmed=bool(item.get("read_back_confirmed")),
+            confidence=0.99 if confirmed else 0.5,
+            explicitly_confirmed=quoted,
+            read_back_confirmed=confirmed,
             removes_service=removes,
-            ambiguous=not bool(item.get("read_back_confirmed")),
+            ambiguous=not confirmed,
         ))
-    supported_outcomes = {
-        "complete", "voicemail", "no_answer", "wrong_number", "stop_requested",
-        "reached_client", "distress", "hostile", "ambiguous",
-    }
-    outcome = record.end_reason if record.end_reason in supported_outcomes else "ambiguous"
+    outcome = record.end_reason if record.end_reason in SUPPORTED_OUTCOMES else "ambiguous"
     return ExtractionResult(
         confirmed_fields=record.confirmed_unchanged,
         changes=changes,
-        summary=f"Live provider call ended with {outcome}.",
+        summary=_summarise(outcome, notes),
         outcome=outcome,
         disclosure_spoken=record.disclosure_spoken,
         recording_consent=False,
     )
+
+
+def _needs_review(extraction: ExtractionResult, reason: str) -> ExtractionResult:
+    """Send every proposed change to a curator, keeping the evidence intact."""
+    downgraded = extraction.model_copy(deep=True)
+    for change in downgraded.changes:
+        change.read_back_confirmed = False
+        change.ambiguous = True
+        change.confidence = min(change.confidence, 0.5)
+    downgraded.summary = _summarise(downgraded.outcome, [reason])[:1000]
+    return downgraded
+
+
+def reconcile_extractions(
+    from_call: ExtractionResult, independent: ExtractionResult, trace: list[dict[str, str]]
+) -> ExtractionResult:
+    """Require two independent readings of the same call to agree before publishing.
+
+    ``from_call`` is what the voice agent recorded while it was talking.
+    ``independent`` is what the safety-reader and extractor graph made of the
+    finished transcript, having taken no part in the conversation. A change
+    publishes without a curator only where both agree it happened and agree what
+    it says.
+
+    Disagreement is never resolved in favour of either side. It is recorded and
+    the change goes to a person, which is the same rule the rest of this product
+    follows: the machine narrows the queue, it does not decide.
+    """
+    merged = from_call.model_copy(deep=True)
+    second = {change.field: change for change in independent.changes}
+
+    for change in merged.changes:
+        other = second.get(change.field)
+        if other is None:
+            change.read_back_confirmed = False
+            change.ambiguous = True
+            change.confidence = min(change.confidence, 0.5)
+            trace.append({
+                "agent": "reconciliation",
+                "event": f"{change.field}.only-the-call-agent-saw-this",
+            })
+        elif str(other.new_value).strip().lower() != str(change.new_value).strip().lower():
+            change.read_back_confirmed = False
+            change.ambiguous = True
+            change.confidence = min(change.confidence, 0.5)
+            trace.append({
+                "agent": "reconciliation",
+                "event": f"{change.field}.the-two-readings-disagree",
+            })
+        elif not (other.read_back_confirmed and other.explicitly_confirmed):
+            change.read_back_confirmed = False
+            change.ambiguous = True
+            change.confidence = min(change.confidence, 0.5)
+            trace.append({
+                "agent": "reconciliation",
+                "event": f"{change.field}.the-transcript-reading-found-no-confirmation",
+            })
+        else:
+            trace.append({"agent": "reconciliation", "event": f"{change.field}.both-readings-agree"})
+
+    # Anything only the transcript reading found still belongs in front of a
+    # person. A change the voice agent forgot to record is exactly the kind of
+    # thing nobody would ever discover afterwards.
+    seen = {change.field for change in merged.changes}
+    for change in independent.changes:
+        if change.field in seen or change.field in merged.confirmed_fields:
+            continue
+        extra = change.model_copy(deep=True)
+        extra.read_back_confirmed = False
+        extra.ambiguous = True
+        extra.confidence = min(extra.confidence, 0.5)
+        merged.changes.append(extra)
+        trace.append({
+            "agent": "reconciliation",
+            "event": f"{change.field}.only-the-transcript-reading-saw-this",
+        })
+
+    # Either reading may stop the call. Neither may un-stop it.
+    if independent.outcome in SAFETY_OUTCOMES and merged.outcome not in SAFETY_OUTCOMES:
+        merged.outcome = independent.outcome
+        trace.append({
+            "agent": "reconciliation",
+            "event": f"outcome.escalated-to-{independent.outcome}",
+        })
+
+    merged.summary = _summarise(
+        merged.outcome,
+        ["The finished transcript was read independently and the two readings were reconciled."],
+    )
+    return merged
+
+
+async def verified_extraction(
+    settings: Settings, task: dict[str, Any], record: CallRecord, trace: list[dict[str, str]]
+) -> ExtractionResult:
+    """The evidence a live call produces, after everything that checks it has run.
+
+    Two things sit between the voice agent and the write gate. The transcript
+    corroboration in :mod:`ontheline.readback` runs always, including with no
+    credentials at all. The independent extraction graph runs wherever a model
+    path is configured, and it reads the finished transcript exactly as the text
+    workflow does, which is what the architecture has always said happens.
+    """
+    from_call = call_record_to_extraction(record)
+    if settings.agent_mode == "demo":
+        trace.append({"agent": "reconciliation", "event": "transcript-corroboration.only"})
+        return from_call
+    if not record.transcript:
+        return _needs_review(from_call, "No transcript was captured, so nothing could be checked.")
+
+    transcript = [
+        TranscriptTurn(role=turn["role"], text=turn["text"])
+        for turn in record.transcript
+        if turn.get("text")
+    ]
+    try:
+        independent = await asyncio.to_thread(
+            extract_from_transcript, settings, task, transcript, trace
+        )
+    except Exception as error:  # a reading that did not happen is not a reading that agreed
+        trace.append({
+            "agent": "hsds-extractor",
+            "event": f"independent-extraction.unavailable:{type(error).__name__}",
+        })
+        return _needs_review(
+            from_call,
+            "The finished transcript could not be read independently, so every change is "
+            "going to a person.",
+        )
+    return reconcile_extractions(from_call, independent, trace)
 
 
 async def twiml(request: Request) -> Response:
@@ -327,8 +501,11 @@ async def twilio_media(websocket: WebSocket) -> None:
                 running.cancel()
         await asyncio.gather(agent_task, receive_task, return_exceptions=True)
 
+    trace: list[dict[str, str]] = [
+        {"agent": "nova-sonic-provider-caller", "event": "bidirectional-call.completed"}
+    ]
     try:
-        extraction = call_record_to_extraction(record)
+        extraction = await verified_extraction(settings, task, record, trace)
         if extraction.outcome in {"voicemail", "no_answer"}:
             websocket.app.state.store.reschedule_task(
                 task_id, extraction.outcome, actor="ontheline-voice-agent",
@@ -339,9 +516,7 @@ async def twilio_media(websocket: WebSocket) -> None:
             return
         websocket.app.state.store.record_verification(
             task_id, extraction, classify_extraction(extraction, task["fields"]), record.transcript,
-            actor="ontheline-voice-agent", agent_trace=[
-                {"agent": "nova-sonic-provider-caller", "event": "bidirectional-call.completed"}
-            ],
+            actor="ontheline-voice-agent", agent_trace=trace,
         )
         websocket.app.state.store.update_outbound_call(call_id, "completed")
     except Exception as error:

@@ -165,6 +165,51 @@ def run_strands_extraction(
     return structured
 
 
+def run_agentcore_extraction(
+    settings: Settings, task: dict[str, Any], transcript: list[TranscriptTurn],
+    trace: list[dict[str, str]],
+) -> ExtractionResult:
+    """Invoke the stateless extraction runtime; policy and persistence stay local."""
+    payload = json.dumps({"input": {
+        "session_id": task["id"],
+        "organization_name": task["organization_name"],
+        "service_name": task["service_name"],
+        "fields": task["fields"],
+        "transcript": [turn.model_dump(mode="json") for turn in transcript],
+    }}).encode()
+    client = boto3.client("bedrock-agentcore", region_name=settings.aws_region)
+    response = client.invoke_agent_runtime(
+        agentRuntimeArn=settings.agentcore_runtime_arn,
+        runtimeSessionId=hashlib.sha256(task["id"].encode()).hexdigest(),
+        qualifier="DEFAULT",
+        payload=payload,
+    )
+    try:
+        output = json.loads(response["response"].read())
+        runtime_output = output["output"]
+        trace.extend(runtime_output.get("trace", []))
+        return ExtractionResult.model_validate(runtime_output["extraction"])
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+        raise RuntimeError("AgentCore returned an invalid extraction response") from error
+
+
+def extract_from_transcript(
+    settings: Settings, task: dict[str, Any], transcript: list[TranscriptTurn],
+    trace: list[dict[str, str]],
+) -> ExtractionResult:
+    """The independent reading of a transcript, whichever model path is configured.
+
+    One entry point, so the live voice call and the text workflow are read by the
+    same component. It is the only thing in the codebase that turns a
+    conversation into a proposal, which is what makes it worth calling twice.
+    """
+    if settings.agent_mode == "bedrock":
+        return run_strands_extraction(settings, task, transcript, trace)
+    if settings.agent_mode == "agentcore":
+        return run_agentcore_extraction(settings, task, transcript, trace)
+    raise RuntimeError(f"agent_mode {settings.agent_mode!r} has no independent extractor")
+
+
 class VerificationWorkflow:
     def __init__(self, store: Store, settings: Settings):
         self.store = store
@@ -209,28 +254,7 @@ class VerificationWorkflow:
     def _run_agentcore(
         self, task: dict[str, Any], transcript: list[TranscriptTurn], trace: list[dict[str, str]]
     ) -> ExtractionResult:
-        """Invoke the stateless extraction runtime; policy and persistence stay local."""
-        payload = json.dumps({"input": {
-            "session_id": task["id"],
-            "organization_name": task["organization_name"],
-            "service_name": task["service_name"],
-            "fields": task["fields"],
-            "transcript": [turn.model_dump(mode="json") for turn in transcript],
-        }}).encode()
-        client = boto3.client("bedrock-agentcore", region_name=self.settings.aws_region)
-        response = client.invoke_agent_runtime(
-            agentRuntimeArn=self.settings.agentcore_runtime_arn,
-            runtimeSessionId=hashlib.sha256(task["id"].encode()).hexdigest(),
-            qualifier="DEFAULT",
-            payload=payload,
-        )
-        try:
-            output = json.loads(response["response"].read())
-            runtime_output = output["output"]
-            trace.extend(runtime_output.get("trace", []))
-            return ExtractionResult.model_validate(runtime_output["extraction"])
-        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
-            raise RuntimeError("AgentCore returned an invalid extraction response") from error
+        return run_agentcore_extraction(self.settings, task, transcript, trace)
 
     @staticmethod
     def _offline_extract(transcript: list[TranscriptTurn], scenario: str | None) -> ExtractionResult:
