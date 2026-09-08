@@ -139,6 +139,23 @@ def _summarise(outcome: str, notes: list[str]) -> str:
     return summary
 
 
+# The bidirectional model speaks in "assistant" and "user". The directory speaks
+# in "assistant", "provider" and "seeker", because who the other party is changes
+# what the call means. Mapping between them is not cosmetic: the readback
+# corroboration looks for a *provider* agreeing with an *assistant*, so a turn
+# filed under the wrong speaker is a turn that cannot be evidence, and every live
+# call would quietly stop qualifying for Tier 1 without anything failing.
+BIDI_SPEAKERS = {"user", "human", "caller"}
+
+
+def speaker_role(role: Any, other_party: str) -> str:
+    """Map one transcript event's speaker onto the directory's vocabulary."""
+    label = str(role or "").lower()
+    if label in BIDI_SPEAKERS:
+        return other_party
+    return label if label in {"assistant", "provider", "seeker"} else "system"
+
+
 def call_record_to_extraction(record: CallRecord) -> ExtractionResult:
     """Turn one call's in-memory record into the schema the tier policy consumes.
 
@@ -453,10 +470,10 @@ async def twilio_media(websocket: WebSocket) -> None:
         text = event.get("text") or event.get("delta", {}).get("text", "")
         if not text:
             return
-        role = event.get("role", "system")
-        role = role if role in {"assistant", "provider", "seeker", "system"} else "system"
-        record.transcript.append({"role": role, "text": redact_pii(text)})
-        if role == "assistant" and "automated assistant" in text.lower():
+        record.transcript.append(
+            {"role": speaker_role(event.get("role"), "provider"), "text": redact_pii(text)}
+        )
+        if event.get("role") == "assistant" and "automated assistant" in text.lower():
             record.disclosure_spoken = True
 
     audio_output = TelephonyAudioOutput(send_frame, on_transcript=capture_transcript)

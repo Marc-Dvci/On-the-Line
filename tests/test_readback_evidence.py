@@ -29,6 +29,7 @@ from ontheline.spike.call_agent import CallRecord
 from ontheline.telephony import (
     call_record_to_extraction,
     reconcile_extractions,
+    speaker_role,
     verified_extraction,
 )
 from ontheline.workflow import CALL_SCRIPTS
@@ -260,3 +261,34 @@ def test_demo_mode_still_corroborates_without_a_model(tmp_path):
     )
     assert extraction.changes[0].read_back_confirmed is True
     assert any("transcript-corroboration.only" in event["event"] for event in trace)
+
+
+# ---------------------------------------------- the speakers have to line up
+
+
+def test_the_callers_turns_are_filed_as_the_provider():
+    """A turn filed under the wrong speaker is a turn that cannot be evidence.
+
+    The bidirectional model speaks in "assistant" and "user"; the directory
+    speaks in "assistant", "provider" and "seeker". The bridge used to drop
+    anything it did not recognise into "system", so every provider turn on a live
+    call was filed as neither party. Nothing failed and nothing looked wrong: the
+    corroboration would simply never find a provider agreeing to anything, and
+    every live call would quietly stop qualifying for Tier 1.
+    """
+    assert speaker_role("user", "provider") == "provider"
+    assert speaker_role("user", "seeker") == "seeker"
+    assert speaker_role("assistant", "provider") == "assistant"
+    assert speaker_role("provider", "provider") == "provider"
+    assert speaker_role(None, "provider") == "system"
+    assert speaker_role("something else", "provider") == "system"
+
+
+def test_a_call_transcribed_the_way_the_model_speaks_still_corroborates():
+    """The same conversation, arriving with the model's own speaker labels."""
+    spoken = [
+        {"role": speaker_role("assistant" if role == "assistant" else "user", "provider"),
+         "text": text}
+        for role, text in CALL_SCRIPTS["hours_changed"]
+    ]
+    assert corroborate(spoken, "schedule", NEW_HOURS).corroborated
