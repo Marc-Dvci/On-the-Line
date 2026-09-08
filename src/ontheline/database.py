@@ -17,6 +17,7 @@ from ontheline.config import Settings, password_hash
 from ontheline.domain import ConsentRequest, ExtractionResult, HSDSServiceInput, Tier
 from ontheline.policy import (
     CANONICAL_SCHEDULE,
+    E164_PHONE,
     PolicyDecision,
     canonical_schedule,
     classify_extraction,
@@ -1405,6 +1406,16 @@ class Store:
         return dict(row)
 
     def _apply_change(self, connection: sqlite3.Connection, service_id: str, field: str, value: str | None) -> None:
+        """Write one field, applying the same canonical-form validators either way.
+
+        This is the only path into the directory, and both kinds of change come
+        through it: a Tier 1 change the policy applied on its own, and a change a
+        curator approved or edited by hand. That is deliberate, and it only means
+        anything if the validators here are the ones the policy uses. A curator
+        typing a phone number into the review box is subject to the same E.164
+        rule as an autonomous change, because a malformed number in a resource
+        directory sends somebody to a dead line either way.
+        """
         if value is None:
             raise ValueError("On the Line never deletes a field automatically")
         direct = {"name", "description", "status", "eligibility", "fees", "application_process", "alert"}
@@ -1418,6 +1429,11 @@ class Store:
             if changed != 1:
                 raise KeyError("service not found")
         elif field == "phone":
+            if not E164_PHONE.fullmatch(value):
+                raise ValueError(
+                    "phone must use canonical E.164 form such as +15550101101, optionally with "
+                    "an extension"
+                )
             changed = connection.execute(
                 "UPDATE phones SET number=? WHERE id=(SELECT id FROM phones WHERE service_id=? ORDER BY id LIMIT 1)",
                 (value, service_id),

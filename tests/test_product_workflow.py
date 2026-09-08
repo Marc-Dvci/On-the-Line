@@ -321,3 +321,24 @@ def test_referral_store_rechecks_active_status_inside_its_transaction(product):
         connection.execute("UPDATE services SET status='inactive' WHERE id='svc_food'")
     with pytest.raises(ValueError, match="not currently active"):
         store.record_referral("svc_food", "food", "02038")
+
+
+def test_a_curator_cannot_write_a_phone_number_the_policy_would_refuse(product):
+    """The ethics document says curator edits pass the same field validators.
+
+    They did not: `_apply_change` revalidated schedule and status, and wrote a
+    phone number straight through. An autonomous change to the same field has to
+    be canonical E.164, so a hand-typed one does now too.
+    """
+    store, _ = product
+    with pytest.raises(ValueError, match="E.164"):
+        with store.transaction() as connection:
+            store._apply_change(connection, "svc_food", "phone", "555 0101, ask for Dana")
+
+    with store.transaction() as connection:
+        store._apply_change(connection, "svc_food", "phone", "+15550101199")
+    with store.connect() as connection:
+        number = connection.execute(
+            "SELECT number FROM phones WHERE service_id='svc_food'"
+        ).fetchone()[0]
+    assert number == "+15550101199"

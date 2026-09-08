@@ -22,9 +22,18 @@ help-seeker agency inside enforceable product boundaries.
    and optional postal code. Common phone and email patterns in narrative feedback are redacted
    before persistence.
 8. **Human authority.** Curators approve, edit, reject, or acknowledge persisted evidence. Edited
-   values pass the same field validators as autonomous changes.
-9. **Traceability.** Automatic changes, curator actions, consent, calls, referrals, failures, task
-   transitions, and imports append hash-chained events protected against mutation.
+   values are written through `_apply_change`, the same single path an autonomous change takes,
+   and meet the same canonical-form validators: HSDS status values, canonical schedules, and
+   E.164 phone numbers. A curator can decide that a change is right; a curator cannot enter a
+   phone number the policy would have refused from a model.
+9. **The caller is not a witness to its own call.** The voice agent proposes changes through
+   tools, and one of the things it can assert is that the provider confirmed a readback. That
+   assertion is checked against the recorded transcript before policy sees it, and where a model
+   path is configured the finished transcript is also read by the independent extraction graph,
+   which has to agree. A change publishes without a curator only where the transcript shows the
+   provider raising it, the assistant reading the whole value back, and the provider agreeing.
+10. **Traceability.** Automatic changes, curator actions, consent, calls, referrals, failures, task
+    transitions, and imports append hash-chained events protected against mutation.
 
 ## Operational controls
 
