@@ -1,5 +1,7 @@
 # On the Line
 
+🥈 **2nd place, Good Neighbor Agents track, AWS *Agents for Humans* Hackathon.**
+
 **When a meal is on the line, someone should be on the line.**
 
 On the Line is a community resource directory that phones ahead. It calls the food banks, clinics
@@ -7,7 +9,7 @@ and shelters it lists, confirms what is still true, publishes only what a provid
 and confirmed on readback, and hands everything that needs judgment to a person. When a neighbour
 reports a closed door, that report becomes the next call in the same database transaction.
 
-Built for the AWS *Agents for Humans* hackathon, Good Neighbor track.
+Built for the AWS *Agents for Humans* hackathon, Good Neighbor Agents track.
 
 ## Try it
 
